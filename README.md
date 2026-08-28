@@ -1,1 +1,44 @@
-# snut
+# Тестовое задание
+**Задача - написать скрипт обучения глубокой нейронной сети для задачи Action Recognition.**
+
+Сама модель уже реализована (файл video_model.py, VisionTransformer), также предоставлена
+функция для создания объектов модели - vit_base_patch16_224(...).
+
+## Подзадачи:
+1) Реализовать дочерние классы интерфейса IVideoWrapper ([*video_wrapper.py*](video_wrapper.py)):
+    - DecordVideo для загрузки видеофайла с помощью библиотеки [decord](https://github.com/dmlc/decord).
+    - OpenCVVideo для загрузки видеофайла с помощью библиотеки [OpenCV](https://pypi.org/project/opencv-python/).
+2) Реализовать класс VideoDataset (video_dataset.py) для чтения файла аннотации и последующей подачи данных
+на вход модели с использованием [DataLoader](https://pytorch.org/tutorials/beginner/basics/data_tutorial.html#).
+3) Реализовать функцию *train_one_epoch* для проведения одной эпохи обучения модели.
+4) Реализовать логику обучения всей модели.
+
+## Пояснения:
+1) Файл аннотации - CSV файл, содержащий в себе информацию о видеофайлах в следующем виде:
+    
+    |    path_to_video 	     | class_label 	 |
+    |:----------------------:|:-------------:|
+    | /path/to/video_0.mp4 	 |      0	       |
+    | /path/to/video_1.mp4 	 |      3	       |
+    |          ...           |      ...      |
+    
+2) Входом модели являются *num_frames* RGB кадров (по умолчанию 16) с разрешением 224x224. Размерность: (batch, num_frames, num_channels, height, width)
+
+3) *sampling_strategy* в VideoDataset определяет способ выбора кадров из видеофайла:
+   - *fixed* - выбор *num_frames* кадров с фиксированном шагом;
+   - *random* - выбор *num_frames* кадров путем разбиения исходного массива кадров на блоки равной длины (число блоков = *num_frames*) и последующим случайным выбором 1 кадра из каждого блока (в сумме получаем *num_frames* кадров для входа в модель).
+   
+4) Всё, что описано в других файлах (кроме самой модели), служит лишь подсказкой/cкелетом. При необходимости можно править.
+
+## Требования:
+- Использовать оптимизатор [AdamW](https://pytorch.org/docs/stable/generated/torch.optim.AdamW.html).
+- Использовать функцию ошибки [CrossEntropyLoss](https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html).
+- Обеспечить поддержку [Scheduler](https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate) для обновления значения learning rate, один из списка:
+  - CosineAnnealingLR;
+  - ExponentialLR;
+  - OneCycleLR.
+- Обеспечить поддержку логирования процесса обучения.
+- Обеспечить поддержку аргументов командной строки (описаны в файле [*main.py*](main.py)).
+
+## Зависимости: 
+numpy, torch, timm, opencv-python, decord (если не MacOS), pandas (опционально, для VideoDataset).
