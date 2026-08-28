@@ -18,9 +18,9 @@ class VideoDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
         video_loader: type[IVideoWrapper],
         num_frames: int = 16,
     ) -> None:
-        
+
         annotation_path = Path(path_to_annotation_file)
-        
+
         with annotation_path.open("r", newline="", encoding="utf-8-sig") as file:
             reader = csv.DictReader(file)
             expected_columns = {"path_to_video", "class_label"}

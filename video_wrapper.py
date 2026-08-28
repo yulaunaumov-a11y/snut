@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
-import importlib
 from pathlib import Path
 from typing import Sequence
 
+import decord
+import cv2
 import numpy as np
 
 
@@ -33,7 +34,6 @@ class DecordVideo(IVideoWrapper):
     def __init__(self, path_to_video: str | Path) -> None:
         
         self.path = str(path_to_video)
-        decord = importlib.import_module("decord")
         self._reader = decord.VideoReader(self.path, ctx=decord.cpu(0))
 
     def get_length(self) -> int:
@@ -51,9 +51,6 @@ class DecordVideo(IVideoWrapper):
 
 class OpenCVVideo(IVideoWrapper):
     def __init__(self, path_to_video: str | Path) -> None:
-        
-        cv2 = importlib.import_module("cv2")
-        self._cv2 = cv2
         self.path = str(path_to_video)
         self._capture = cv2.VideoCapture(self.path)
         self._length = int(self._capture.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -62,11 +59,10 @@ class OpenCVVideo(IVideoWrapper):
         return self._length
 
     def get_frame(self, index: int) -> np.ndarray:
-
-        self._capture.set(self._cv2.CAP_PROP_POS_FRAMES, index)
+        self._capture.set(cv2.CAP_PROP_POS_FRAMES, index)
         success, frame = self._capture.read()
 
-        return self._cv2.cvtColor(frame, self._cv2.COLOR_BGR2RGB)
+        return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     def get_batch(self, indices: Sequence[int]) -> np.ndarray:
         return np.stack([self.get_frame(int(index)) for index in indices])
