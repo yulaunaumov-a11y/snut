@@ -1,4 +1,4 @@
-from collections.abc import Sized
+from tqdm import tqdm
 
 import torch
 from torch.utils.data import DataLoader
@@ -21,7 +21,7 @@ def evaluate(
     predicted_totals: torch.Tensor | None = None
     target_totals: torch.Tensor | None = None
 
-    for clips, targets in data_loader:
+    for clips, targets in tqdm(data_loader, total=len(data_loader), desc="Validate metrics", position=1, leave=False):
         logits = model(clips.to(device, non_blocking=True))
         targets = targets.to(device, non_blocking=True, dtype=torch.long)
 

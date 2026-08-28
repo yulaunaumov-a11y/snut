@@ -15,7 +15,7 @@ from typing import Dict, List, Tuple
 def build_dataloaders(
     config: Dict, 
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
-    
+
     dataset = VideoDataset(
         config.path.csv_path,
         sampling_strategy=config.model.sampling_strategy,
@@ -23,7 +23,7 @@ def build_dataloaders(
         num_frames=config.model.num_frames,
     )
     split_lengths = [
-        int(len(dataset) * 0.9),
+        int(len(dataset) * 0.8),
         int(len(dataset) * 0.1),
     ]
     split_lengths.append(len(dataset) - sum(split_lengths))

@@ -8,9 +8,7 @@ import yaml
 
 from pathlib import Path, PosixPath
 from torch.utils.data import DataLoader
-from utils.dataset_class import DatasetClass
 from typing import Dict, List, Tuple
-from sklearn.model_selection import StratifiedShuffleSplit
 
 def read_config(config_path: str) -> Dict:
     """

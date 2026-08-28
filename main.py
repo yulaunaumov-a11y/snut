@@ -15,14 +15,14 @@ def train_one_epoch(model: torch.nn.Module,
                     criterion: torch.nn.Module,
                     data_loader: torch.utils.data.DataLoader,
                     optimizer: torch.optim.Optimizer,
-                    scheduler,
+                    scheduler: torch.optim.lr_scheduler.LRScheduler,
                     device: torch.device
                     ):
     model.train()
     total_loss = 0.0
     total_samples = 0
-    
-    for inputs, labels in data_loader:
+
+    for inputs, labels in tqdm(data_loader, total=len(data_loader), desc="Train one epoch", position=1, leave=False):
         inputs = inputs.to(device, non_blocking=True)
         labels = labels.to(device, non_blocking=True, dtype=torch.long)
 
@@ -48,7 +48,12 @@ if __name__ == "__main__":
     print(f"Device use: {device}")
                            
     print("Initializing the model.")
-    model = vit_base_patch16_224(num_classes=config.task.num_classes).to(device)
+    model = vit_base_patch16_224(
+        num_classes=config.task.num_classes,
+        all_frames=config.model.num_frames,
+        img_size=config.model.image_size,
+    ).to(device)
+
 
     print("Initializing criterion, optimizer.")
     optimizer = object_from_dict(config.optimizer, params = model.parameters())
@@ -68,7 +73,7 @@ if __name__ == "__main__":
         "f1": -1,
     }
     for epoch in tqdm(range(config.training.epochs), total=config.training.epochs, desc="Training"):
-        loss = train_one_epoch(model, criterion, data_loader, optimizer, scheduler, device)
+        loss = train_one_epoch(model, criterion, train_data_loader, optimizer, scheduler, device)
 
         validation_metrics = evaluate(
             model,
@@ -85,7 +90,7 @@ if __name__ == "__main__":
             num_workers=config.training.num_workers,
         )
         if old_metrics["f1"] < validation_metrics["f1"]:
-            logger.log_model_weights(model_weights=model, epoch=epoch, name = "best_model")
+            logger.log_model_weights(model=model, epoch=epoch, name="best_model")
             old_metrics = validation_metrics
 
         logger.log_loss(
@@ -93,7 +98,7 @@ if __name__ == "__main__":
            train_loss=loss, 
            optimizer=optimizer, 
            metrics=train_metrics, 
-           text="train"
+           text="Train"
         )
 
         logger.log_loss(
@@ -101,7 +106,7 @@ if __name__ == "__main__":
            train_loss=loss, 
            optimizer=optimizer, 
            metrics=validation_metrics, 
-           text="validate"
+           text="Validate"
         )
 
     test_metrics = evaluate(
@@ -112,5 +117,5 @@ if __name__ == "__main__":
             num_workers=config.training.num_workers,
     )
     logger.log_test(test_metrics)
-    logger.log_model_weights(model_weights=model, epoch=epoch, name = "last_model")
+    logger.log_model_weights(model=model, epoch=epoch, name="last_model")
     print("The learning process is complete.")

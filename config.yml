@@ -4,12 +4,13 @@ training:
     batch_size_train: 32
     batch_size_test: 32
     num_workers: 0
-    device: cuda
-    epochs: 200
+    device: cuda #cpu, cuda
+    epochs: 100
 
 model:
     sampling_strategy: fixed
-    num_frames: 16
+    num_frames: 2
+    image_size: 32
 
 task:
     mode: classification
