@@ -1,23 +1,15 @@
 """
     Пример запуска скрипта:
-        $ python3 main.py /PATH/TO/ANNOTATION/FILE.csv
+        $ python3 main.py
 """
-
-import argparse
 import torch
-
-from pathlib import Path
-from torch.optim.lr_scheduler import CosineAnnealingLR
-from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from build_dataloader import build_dataloaders
 from evaluate import evaluate
 from logger import Logger
-from video_dataset import VideoDataset
+from utils import object_from_dict, read_config
 from video_model import vit_base_patch16_224
-from video_wrapper import DecordVideo
-from utils import read_config
 
 def train_one_epoch(model: torch.nn.Module,
                     criterion: torch.nn.Module,
@@ -30,21 +22,22 @@ def train_one_epoch(model: torch.nn.Module,
     total_loss = 0.0
     total_samples = 0
     
-    for step, (inputs, labels) in enumerate(data_loader, start=1):
+    for inputs, labels in data_loader:
         inputs = inputs.to(device, non_blocking=True)
-        labels = labels.to(device, non_blocking=True
-                           
-        y_pred = model(inputs)
-                           
-        loss = criterion(y_pred, labels)
+        labels = labels.to(device, non_blocking=True, dtype=torch.long)
+
+        optimizer.zero_grad()
+        loss = criterion(model(inputs), labels)
         loss.backward()
         optimizer.step()
+
         batch_size = labels.size(0)
         total_loss += loss.detach().item() * batch_size
         total_samples += batch_size
 
-   scheduler.step()
-   return total_loss / total_samples
+
+    scheduler.step()
+    return total_loss / total_samples
                            
 if __name__ == "__main__":
 
@@ -60,7 +53,7 @@ if __name__ == "__main__":
     print("Initializing criterion, optimizer.")
     optimizer = object_from_dict(config.optimizer, params = model.parameters())
     criterion = object_from_dict(config.criterion)
-    scheduler = object_from_dict(config.scheduler)
+    scheduler = object_from_dict(config.scheduler, optimizer=optimizer)
 
     print("Build a dataloaders.")
     train_data_loader, test_data_loader, val_data_loader = build_dataloaders(config)
@@ -119,5 +112,5 @@ if __name__ == "__main__":
             num_workers=config.training.num_workers,
     )
     logger.log_test(test_metrics)
-    logger.log_model_weights(model_weights=model, epoch=epoch, name = "last")
+    logger.log_model_weights(model_weights=model, epoch=epoch, name = "last_model")
     print("The learning process is complete.")

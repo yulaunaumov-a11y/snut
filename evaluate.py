@@ -1,7 +1,7 @@
 from collections.abc import Sized
 
 import torch
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 
 @torch.inference_mode()
 def evaluate(
@@ -59,7 +59,7 @@ def evaluate(
 
     return {
         "accuracy": correct / total,
-        "precision_macro": precision[active_classes].mean().item(),
-        "recall_macro": recall[active_classes].mean().item(),
-        "f1_macro": f1[active_classes].mean().item(),
+        "precision": precision[active_classes].mean().item(),
+        "recall": recall[active_classes].mean().item(),
+        "f1": f1[active_classes].mean().item(),
     }

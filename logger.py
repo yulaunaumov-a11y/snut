@@ -1,20 +1,9 @@
 """This module contains implementation of logger for ClearML."""
-from pathlib import Path
 import datetime
-import cv2
-import addict
 import logging
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import torch
-from typing import Dict
-from torch.utils.data import DataLoader
-from utils import read_config
-from sklearn.metrics import confusion_matrix
+from pathlib import Path
 
-import io
-from PIL import Image
+import torch
 
 class Logger:
     """Implements logging to ClearML."""
@@ -28,10 +17,11 @@ class Logger:
         """
         self.config = config
         self.job_time = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y-%m-%d_%H:%M:%S")
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger(__name__)
         
-        self.folder_name_to_save = Path(self.config.path.path_weights_to_save, f"weights_{datetime.datetime.now().isoformat()}")
-        self.folder_name_to_save.mkdir(exist_ok=True)
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        self.folder_name_to_save = Path(config.path.path_weights_to_save) / f"weights_{timestamp}"
+        self.folder_name_to_save.mkdir(parents=True, exist_ok=True)
 
     def log_loss(self, epoch: int, train_loss: float, optimizer, metrics, text) -> None:
         """
@@ -62,15 +52,8 @@ class Logger:
             epoch: Number of epoch with best validation metric;
             model_weights: Model's state dictionary.
         """
-        time = datetime.datetime.now()
+        for file_path in self.folder_name_to_save.glob(f"{name}_*.pth"):
+            file_path.unlink()
 
-        matching_files = list(self.folder_name_to_save.glob(f"*{name}*"))
-
-        for file_path in matching_files:
-            if file_path.is_file():
-                file_path.unlink()
-
-        file_name = f"{name}_{self.config.project.name}_{time}_epoch:{epoch}.pth"
-        weights_path = Path(self.folder_name_to_save.as_posix(), file_name)
-        torch.save(model_weights.state_dict(), weights_path.as_posix())
-        self.task.upload_artifact("model_weights.pth", artifact_object=weights_path.as_posix())
+        file_name = f"{name}_{self.config.project.name}_epoch-{epoch}.pth"
+        torch.save(model.state_dict(), self.folder_name_to_save / file_name)
